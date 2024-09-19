@@ -1,0 +1,19 @@
+newsList:
+  news:
+    title:
+      Something happened
+    description:
+      This happened
+    rating:
+      24
+    commentsCount:
+      5
+  news:
+    title:
+      Nothing really happened
+    rating:
+      0.5
+    commentsCount:
+      3
+    description:
+      

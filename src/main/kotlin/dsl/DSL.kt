@@ -1,3 +1,5 @@
+package dsl
+
 fun main() {
     val newsList = yamlNewsList {
         news {
@@ -16,7 +18,6 @@ fun main() {
             }
         }
     }
-
     println(newsList)
 }
 

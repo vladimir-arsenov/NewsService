@@ -1,9 +1,10 @@
+package dto
+
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
 import kotlin.math.exp
 
-// Задание #1
 @Serializable
 data class News @OptIn(ExperimentalSerializationApi::class) constructor(
     val id: Long,
