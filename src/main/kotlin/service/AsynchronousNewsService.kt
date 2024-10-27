@@ -1,5 +1,7 @@
 package service
 
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import dto.News
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -36,12 +38,14 @@ import kotlin.system.measureTimeMillis
 fun main() {
     AsynchronousNewsService().getNews()
 }
-class AsynchronousNewsService (
-    private val workersCount: Int = 2,
-    semaphoreValue: Int = 6,
-    private val pageSize: Int = 100
-){
-    private val url = "https://kudago.com/public-api/v1.4/news/"
+class AsynchronousNewsService {
+    private val config: Config = ConfigFactory.load()
+
+    private val url = config.getString("newsService.url")
+    private val workersCount: Int = config.getInt("newsService.workersCount")
+    private val semaphoreValue: Int = config.getInt("newsService.semaphoreValue")
+    private val pageSize: Int = config.getInt("newsService.pageSize")
+    private val outputPath: String = config.getString("newsService.outputPath")
     private val client = HttpClient(CIO)
     private val semaphore = Semaphore(semaphoreValue)
 
@@ -49,9 +53,8 @@ class AsynchronousNewsService (
         val time = measureTimeMillis {
             runBlocking {
                 val channel = Channel<List<News>>()
-                val outputPath = "news_async_output.csv"
                 val pagesCount = ceil(getTotalNewsCount().toDouble() / pageSize).toInt()
-                val processor = newsProcessor(channel, outputPath)
+                val processor = newsProcessor(channel)
                 newsWorkers(pageSize, pagesCount, channel, workersCount).join()
                 channel.close()
                 processor.join()
@@ -76,9 +79,9 @@ class AsynchronousNewsService (
         }
     }
 
-   private fun CoroutineScope.newsProcessor(channel: Channel<List<News>>, path: String) = launch(Dispatchers.IO) {
-        logger.info { "Saving news to CSV file: $path" }
-        val file = File(path)
+   private fun CoroutineScope.newsProcessor(channel: Channel<List<News>>) = launch(Dispatchers.IO) {
+        logger.info { "Saving news to CSV file: $outputPath" }
+        val file = File(outputPath)
 
         if (file.parentFile != null && !file.parentFile.exists() && !file.parentFile.mkdirs()) {
             throw FileNotFoundException("Incorrect path")
@@ -102,7 +105,7 @@ class AsynchronousNewsService (
                 }
             }
         } catch (e: IOException) {
-            logger.error { "Error writing CSV file: $path" }
+            logger.error { "Error writing CSV file: $outputPath" }
         }
         logger.info { "All news has been written to file." }
     }
